@@ -1,0 +1,17 @@
+{
+  "name": "mgd-platform-builder",
+  "version": "0.2.0",
+  "description": "Generator fuer selbstgehostete Plattform-Geruester mit MariaDB, MySQL oder PostgreSQL",
+  "license": "MIT",
+  "scripts": {
+    "start": "node skill/index.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "ejs": "^3.1.9",
+    "js-yaml": "^4.1.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

@@ -1,0 +1,143 @@
+# Docker Compose für <%= platformName %>
+# Generiert: <%= timestamp %>
+
+version: '3.8'
+
+services:
+<% if (database === 'mysql') { %>
+  mysql:
+    image: mysql:8
+    container_name: <%= platformNameSnake %>_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+      MYSQL_DATABASE: <%= platformNameSnake %>
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  directus:
+    image: directus/directus:latest
+    container_name: <%= platformNameSnake %>_api
+    environment:
+      KEY: replace-with-random-value
+      SECRET: replace-with-random-value
+      DB_CLIENT: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: <%= platformNameSnake %>
+      DB_USER: root
+      DB_PASSWORD: mysql
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin
+    ports:
+      - "8055:8055"
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  adminer:
+    image: adminer:latest
+    container_name: <%= platformNameSnake %>_admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+<% } else if (database === 'postgres') { %>
+  postgres:
+    image: postgres:15
+    container_name: <%= platformNameSnake %>_postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: <%= platformNameSnake %>
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  postgrest:
+    image: postgrest/postgrest:latest
+    container_name: <%= platformNameSnake %>_api
+    environment:
+      PGRST_DB_URI: postgres://postgres:postgres@postgres:5432/<%= platformNameSnake %>
+      PGRST_DB_ANON_ROLE: anon
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  adminer:
+    image: adminer:latest
+    container_name: <%= platformNameSnake %>_admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - postgres
+<% } else { %>
+  mariadb:
+    image: mariadb:11
+    container_name: <%= platformNameSnake %>_mariadb
+    environment:
+      MARIADB_ROOT_PASSWORD: mariadb
+      MARIADB_DATABASE: <%= platformNameSnake %>
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  directus:
+    image: directus/directus:latest
+    container_name: <%= platformNameSnake %>_api
+    environment:
+      KEY: replace-with-random-value
+      SECRET: replace-with-random-value
+      DB_CLIENT: mysql
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      DB_DATABASE: <%= platformNameSnake %>
+      DB_USER: root
+      DB_PASSWORD: mariadb
+      ADMIN_EMAIL: admin@example.com
+      ADMIN_PASSWORD: admin
+    ports:
+      - "8055:8055"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+
+  adminer:
+    image: adminer:latest
+    container_name: <%= platformNameSnake %>_admin
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mariadb
+<% } %>
+volumes:
+<% if (database === 'mysql') { %>
+  mysql_data:
+<% } else if (database === 'postgres') { %>
+  postgres_data:
+<% } else { %>
+  mariadb_data:
+<% } %>
+
+networks:
+  default:
+    name: <%= platformNameSnake %>_network
